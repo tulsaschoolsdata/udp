@@ -1,3 +1,8 @@
+# Ignore R things
 packrat/lib*/
+.RData
+.Rhistory
+.Rprofile
 
+# Ignore TPS Configuration
 __tpsdata__.R
