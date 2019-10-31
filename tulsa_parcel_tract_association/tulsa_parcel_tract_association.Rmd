@@ -1,0 +1,101 @@
+---
+title: "tulsa_parcel_tract_association"
+author: zachandfox
+output: html_document
+---
+
+## Used to generate some data relating to census/geography
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(mapview)
+library(tigris)
+library(leaflet)
+library(data.table)
+
+options(tigris_use_cache = TRUE)
+
+# To keep enough digits on coords
+options(digits = 11)
+
+#coordinate reference system (long-lat system)
+cr_sys = 4326
+
+# Source TPS Configuration (excluded from repo). Includes:
+#     project_directory 
+#     tps_boundaries 
+source(file.path(Sys.getenv("REPOS"), "udp//__tpsdata__.R"))
+
+# Project Term
+term <- "Fall 2019"
+
+```
+
+```{r import_raw_data}
+
+# Download OK blocks 
+ok_blocks <- blocks(state = "OK") %>% 
+  st_as_sf() %>% 
+  st_transform(crs = 4326)
+
+# TPS Boundaries
+hs_bounds_raw <- st_read(tps_boundaries)
+
+# Import raw CoT data #
+cot_raw <- read_csv(file.path(tps_project_directory, term, "input/TulsaParcelsNeighborhood.csv"))
+
+```
+
+
+```{r transform_data}
+
+# TPS HS Boundaries
+hs_bounds <- hs_bounds_raw %>% 
+  st_transform(4326)
+
+# Identify TPS Blocks, based on HS boundaries (and therefore tracts)
+tps_blocks <- ok_blocks %>% 
+  st_intersection(hs_bounds) 
+
+# CoT Data
+cot <- cot_raw %>%
+  rename_all(tolower) %>% 
+  rowwise() %>% 
+  mutate(pt = st_sfc(st_point(x=c(lon,lat)),crs=4326)) %>% 
+  st_as_sf() 
+
+```
+
+```{r combine_data}
+
+# Associate CoT points w/ TPS tracts
+cot_tps_tract_association <- cot %>% 
+  
+  # Intersect CoT coordinates with TPS blocks  
+  st_intersection(tps_blocks) %>% 
+  
+  # Convert to DataFrame
+  as.data.frame() %>% 
+ 
+  # Generate tract_number identifier
+  mutate(tract_number = paste0(STATEFP10, COUNTYFP10, TRACTCE10)) %>% 
+  
+  # Move geometries to front columns 
+  select(-x1) %>% 
+  select(fid:lat, STATEFP10:tract_number, everything()) %>%
+  # select(fid:lat, STATEFP10:tract_number, everything()) %>% 
+
+  # Lower-case column names 
+  rename_all(tolower)
+
+```
+
+```{r export_data}
+
+write_csv(cot_tps_tract_association, file.path(project_directory, term, "output/tulsa_parcels_with_tracts/tulsa_parcel_tract_association.csv"))
+
+```
+
