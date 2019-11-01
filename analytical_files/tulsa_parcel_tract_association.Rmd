@@ -1,5 +1,5 @@
 ---
-title: "tulsa_parcel_tract_association"
+title: "tulsa_parcel_tps_tract_association"
 author: zachandfox
 output: html_document
 ---
@@ -45,7 +45,7 @@ ok_blocks <- blocks(state = "OK") %>%
 hs_bounds_raw <- st_read(tps_boundaries)
 
 # Import raw CoT data #
-cot_raw <- read_csv(file.path(tps_project_directory, term, "input/TulsaParcelsNeighborhood.csv"))
+cot_raw <- read_csv(file.path(project_directory, term, "0_raw_files/TulsaParcelsNeighborhood.csv"))
 
 ```
 
@@ -72,7 +72,7 @@ cot <- cot_raw %>%
 ```{r combine_data}
 
 # Associate CoT points w/ TPS tracts
-cot_tps_tract_association <- cot %>% 
+tulsa_parcel_tps_tract_association <- cot %>% 
   
   # Intersect CoT coordinates with TPS blocks  
   st_intersection(tps_blocks) %>% 
@@ -81,11 +81,11 @@ cot_tps_tract_association <- cot %>%
   as.data.frame() %>% 
  
   # Generate tract_number identifier
-  mutate(tract_number = paste0(STATEFP10, COUNTYFP10, TRACTCE10)) %>% 
+  mutate(tract = as.integer(as.integer(COUNTYFP10)*(10^6) + as.integer(TRACTCE10))) %>% 
   
   # Move geometries to front columns 
   select(-x1) %>% 
-  select(fid:lat, STATEFP10:tract_number, everything()) %>%
+  select(fid:lat, STATEFP10:tract, everything()) %>%
   # select(fid:lat, STATEFP10:tract_number, everything()) %>% 
 
   # Lower-case column names 
@@ -95,7 +95,7 @@ cot_tps_tract_association <- cot %>%
 
 ```{r export_data}
 
-write_csv(cot_tps_tract_association, file.path(project_directory, term, "output/tulsa_parcels_with_tracts/tulsa_parcel_tract_association.csv"))
+write_csv(tulsa_parcel_tps_tract_association, file.path(project_directory, term, "1_analytical_files/combined/tulsa_parcel_tps_tract_association.csv"))
 
 ```
 
