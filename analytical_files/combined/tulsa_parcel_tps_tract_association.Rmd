@@ -45,7 +45,7 @@ ok_blocks <- blocks(state = "OK") %>%
 hs_bounds_raw <- st_read(tps_boundaries)
 
 # Import raw CoT data #
-cot_raw <- read_csv(file.path(project_directory, term, "0_raw_files/TulsaParcelsNeighborhood.csv"))
+cot_raw <- read_csv(file.path(project_directory, term, "1_analytical_files/tulsa_parcels.csv"))
 
 ```
 
@@ -86,7 +86,6 @@ tulsa_parcel_tps_tract_association <- cot %>%
   # Move geometries to front columns 
   select(-x1) %>% 
   select(fid:lat, STATEFP10:tract, everything()) %>%
-  # select(fid:lat, STATEFP10:tract_number, everything()) %>% 
 
   # Lower-case column names 
   rename_all(tolower)
