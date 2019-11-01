@@ -1,3 +1,6 @@
+# Ignore Python things
+__pycache__/
+
 # Ignore R things
 packrat/lib*/
 .RData
@@ -6,3 +9,4 @@ packrat/lib*/
 
 # Ignore TPS Configuration
 __tpsdata__.R
+__tpsdata__.py
