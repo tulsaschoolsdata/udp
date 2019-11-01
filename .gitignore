@@ -6,6 +6,7 @@ packrat/lib*/
 .RData
 .Rhistory
 .Rprofile
+packrat/
 
 # Ignore TPS Sensitive Things
 __tpsdata__.R
