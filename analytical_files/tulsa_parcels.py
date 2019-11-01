@@ -13,15 +13,13 @@ import pandas as pd
 
 ###### Initialize Constants ######
 START_YEAR = 2009
-
-###### Load Raw Data #######
-cot_raw = pd.read_csv(project_directory+'0_raw_files/TulsaParcelsNeighborhood.csv')
-
-###### Transform Data ######
 # Define columns to keep #
 columns = ['FID', 'AREA', 'PAR_TYPE', 'LON', 'LAT', 'PIC_YEAR', 'ACCTTYPE', 'SECTION', 'SALEP', 'CONFIRMUN', 'VALIDINV', 'VAC_SALE', 'QUALITY', 'PROPTYPE', 'CONDITION', 'LEADESC', 'MKT_VAL', 'COST_VAL', 'Neighborhood']
-# TODO: REMOVE THIS
-cot = cot_raw.copy()
+
+###### Load Raw Data #######
+cot = pd.read_csv(project_directory+'0_raw_files/TulsaParcelsNeighborhood.csv')
+
+###### Transform Data ######
 # Filter on year > 2009
 cot = cot[cot.PIC_YEAR > START_YEAR]
 
