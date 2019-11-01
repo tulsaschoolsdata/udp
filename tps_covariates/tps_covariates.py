@@ -41,3 +41,6 @@ student_tracts = pd.concat(student_tracts_list)
 student_counts = student_tracts.groupby(['year', 'tract'])['studentid'].agg(['count']).reset_index(level=['year', 'tract'])
 # Reshape wide #
 student_counts_wide = student_counts.pivot(index='tract', columns='year', values='count').fillna(0).astype('int64')
+
+###### Export ########
+student_counts_wide.to_csv(project_directory+'output/tps_student_counts_by_tract/tps_student_counts_by_tract.csv')
