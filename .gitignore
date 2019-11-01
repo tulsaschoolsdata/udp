@@ -7,6 +7,7 @@ packrat/lib*/
 .Rhistory
 .Rprofile
 
-# Ignore TPS Configuration
+# Ignore TPS Sensitive Things
 __tpsdata__.R
 __tpsdata__.py
+*/tps_sensitive/
