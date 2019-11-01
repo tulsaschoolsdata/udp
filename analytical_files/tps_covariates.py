@@ -18,8 +18,6 @@ end_year = 2020
 
 ###### Load Raw Data ######
 student_geos_raw = {year: pd.read_csv(student_geos_path+'/student_geos_'+str(year)+'.csv') for year in range(start_year, end_year+1)}
-#student_geos_raw = pd.read_csv(student_geos+'/student_geos_2010.csv')
-#students_blocks_raw = pd.read_csv(project_directory+'/input/students_blocks.csv')
 
 ###### Clean Raw Data ######
 student_tracts_list = {}
@@ -27,7 +25,7 @@ for year in range(start_year, end_year+1):
     ### Student Geographies ###
     temp = student_geos_raw[year].copy()
     # Create a 'tract' column #
-    temp['tract'] = temp['COUNTYFP10']*10000 + temp['TRACTCE10']
+    temp['tract'] = temp['COUNTYFP10']*(10**6) + temp['TRACTCE10']
     # Keep columns of interest #
     temp = temp[['studentid', 'tract', 'year']]
     # Save to list #
@@ -43,4 +41,4 @@ student_counts = student_tracts.groupby(['year', 'tract'])['studentid'].agg(['co
 student_counts_wide = student_counts.pivot(index='tract', columns='year', values='count').fillna(0).astype('int64')
 
 ###### Export ########
-student_counts_wide.to_csv(project_directory+'output/tps_student_counts_by_tract/tps_student_counts_by_tract.csv')
+student_counts_wide.to_csv(project_directory+'1_analytical_files/tps_covariates/tps_student_counts_by_tract.csv')
