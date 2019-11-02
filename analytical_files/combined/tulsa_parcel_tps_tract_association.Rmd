@@ -45,7 +45,7 @@ ok_blocks <- blocks(state = "OK") %>%
 hs_bounds_raw <- st_read(tps_boundaries)
 
 # Import raw CoT data #
-cot_raw <- read_csv(file.path(project_directory, term, "1_analytical_files/tulsa_parcels.csv"))
+cot_raw <- read_csv(file.path(project_directory, term, "1_analytical_files/tulsa_data/tulsa_parcels.csv"))
 
 ```
 
