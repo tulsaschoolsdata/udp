@@ -1,0 +1,2 @@
+
+CURRENT_YEAR = 2020
