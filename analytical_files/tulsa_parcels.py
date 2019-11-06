@@ -8,7 +8,7 @@ Description: Pull in raw parcel data, clean it, export it
 """
 
 from __tpsdata__ import project_directory
-import numpy as np
+from CONSTANTS import START_YEAR
 import pandas as pd
 
 ###### Initialize Constants ######
@@ -16,17 +16,17 @@ import pandas as pd
 columns = ['FID', 'AREA', 'PAR_TYPE', 'LON', 'LAT', 'PIC_YEAR', 'ACCTTYPE', 'SECTION', 'SALEP', 'CONFIRMUN', 'VALIDINV', 'VAC_SALE', 'QUALITY', 'PROPTYPE', 'CONDITION', 'LEADESC', 'MKT_VAL', 'COST_VAL', 'Neighborhood']
 
 ###### Load Raw Data #######
-cot = pd.read_csv(project_directory+'0_raw_files/TulsaParcelsNeighborhood.csv')
+tulsa_parcels = pd.read_csv(project_directory+'0_raw_files/TulsaParcelsNeighborhood.csv')
 
 ###### Transform Data ######
 # Keep columns of interest #
-cot = cot[columns]
+tulsa_parcels = tulsa_parcels[columns]
 
 # Filter on year > 2009
-cot = cot[cot.PIC_YEAR > START_YEAR]
+tulsa_parcels = tulsa_parcels[tulsa_parcels.PIC_YEAR > START_YEAR]
 
 # Rename columns 
-cot.rename(columns={'pic_year': 'year'}
+tulsa_parcels.rename(columns={'pic_year': 'year'})
 
 ###### Export ######
-cot.to_csv(project_directory+'1_analytical_files/tulsa_data/tulsa_parcels.csv')
+tulsa_parcels.to_csv(project_directory+'1_analytical_files/tulsa_data/tulsa_parcels.csv')
