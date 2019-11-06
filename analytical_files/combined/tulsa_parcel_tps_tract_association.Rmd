@@ -29,9 +29,6 @@ cr_sys = 4326
 #     tps_boundaries 
 source(file.path(Sys.getenv("REPOS"), "udp//__tpsdata__.R"))
 
-# Project Term
-term <- "Fall 2019"
-
 ```
 
 ```{r import_raw_data}
@@ -45,7 +42,7 @@ ok_blocks <- blocks(state = "OK") %>%
 hs_bounds_raw <- st_read(tps_boundaries)
 
 # Import raw CoT data #
-cot_raw <- read_csv(file.path(project_directory, term, "1_analytical_files/tulsa_data/tulsa_parcels.csv"))
+cot_raw <- read_csv(file.path(project_directory, project_term, "1_analytical_files/tulsa_data/tulsa_parcels.csv"))
 
 ```
 
@@ -94,7 +91,7 @@ tulsa_parcel_tps_tract_association <- cot %>%
 
 ```{r export_data}
 
-write_csv(tulsa_parcel_tps_tract_association, file.path(project_directory, term, "1_analytical_files/combined/tulsa_parcel_tps_tract_association.csv"))
+write_csv(tulsa_parcel_tps_tract_association, file.path(project_directory, project_term, "1_analytical_files/combined/tulsa_parcel_tps_tract_association.csv"))
 
 ```
 
