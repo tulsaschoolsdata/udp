@@ -26,7 +26,7 @@ tulsa_parcels = tulsa_parcels[columns]
 tulsa_parcels = tulsa_parcels[tulsa_parcels.PIC_YEAR > START_YEAR]
 
 # Rename columns 
-tulsa_parcels.rename(columns={'pic_year': 'year'})
+tulsa_parcels = tulsa_parcels.rename(columns={'PIC_YEAR': 'year'})
 
 ###### Export ######
 tulsa_parcels.to_csv(project_directory+'1_analytical_files/tulsa_data/tulsa_parcels.csv')
