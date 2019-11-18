@@ -11,14 +11,44 @@ from __tpsdata__ import project_directory, pp
 from datetime import datetime as dt
 import pandas as pd
 import numpy as np
+import seaborn as sns
+
+# TODO: Undo year-by-year change for <metrics>
+# TODO: search for outliers in underlying data: if not residential, remove
+
+# TODO: Create residential, commercial, combined equivalents
+# TODO: Remove outliers
+# TODO: Shape: count_2010-count_2020, tract_v_city_{metrics}
+# TODO: tract_v_city_{metrics}:
+#    standard deviations of tract against city
+    
 
 ###### Initialize Constants ######
 START_YEAR = 2012
 END_YEAR = 2018
 
-# Filter specifications on parcel data 
+# Define useful lists
 parcels_columns = ['fid', 'year', 'tract', 'salep', 'mkt_val', 'cost_val']
 metrics = ['salep', 'mkt_val', 'cost_val']
+typeids = ['accttype', 'proptype']
+dftypes = ['resid', 'comme', 'combo']
+
+# Toggles:
+remove_zeroes = False # Remove zero-valued entries for metrics
+explore_stats = False
+medians = False
+if medians:
+    aggs = ['mean', 'median']
+else:
+    aggs = ['mean']
+
+
+## Define filters, based on tabulation 
+parcels_filter = {'year': range(START_YEAR, END_YEAR+1),
+#    'par_type': "PARCEL",
+#    'accttype': "Residential", 
+#    'proptype': "Residential",
+}
 
 ###### Load Raw Data ######
 parcels_raw = pd.read_csv(project_directory+'1_analytical_files/combined/tulsa_parcel_tps_tract_association.csv')
@@ -28,52 +58,144 @@ students_raw = pd.read_csv(project_directory+'1_analytical_files/tps_covariates/
 #########################
 ### Exploratory Stats ###
 #########################
-parcels = parcels_raw.copy()
-## Tabulate Counts of Parcel Types ##
-parcel_types = pd.crosstab([parcels['par_type'], parcels['accttype']], parcels['proptype'])
+if explore_stats:
+    parcels = parcels_raw.copy()
+    ## Tabulate Counts of Parcel Types ##
+    parcel_types = pd.crosstab([parcels['par_type'], parcels['accttype']], parcels['proptype'])
+    
+    ## Create subsets #
+    #parcels_combo = parcels.copy()
+    #parcels_resid = parcels.copy()
+    #parcels_comme = parcels.copy()
+    
+    ## Tabulate Non-zero metric data ##
+    parcels['salep_nz'] = np.heaviside(parcels['salep'], 0)
+    parcels['mkt_val_nz'] = np.heaviside(parcels['mkt_val'], 0)
+    parcels['cost_val_nz'] = np.heaviside(parcels['cost_val'], 0)
+    metric_non_zero_tab = pd.crosstab([parcels['mkt_val_nz'], parcels['cost_val_nz']], parcels['salep_nz'])
+    
+    # Inspect zero-valued parcels 
+    zeroed_parcels = parcels[(parcels['mkt_val'] == 0) & (parcels['cost_val'] == 0)]
+    zeroed_parcels_tab = pd.crosstab([zeroed_parcels['par_type'], zeroed_parcels['accttype']], zeroed_parcels['proptype'], dropna=False)
+    
 
-## Tabulate Non-zero metric data ##
-parcels['salep_nz'] = np.heaviside(parcels['salep'], 0)
-parcels['mkt_val_nz'] = np.heaviside(parcels['mkt_val'], 0)
-parcels['cost_val_nz'] = np.heaviside(parcels['cost_val'], 0)
-metric_non_zero_tab = pd.crosstab([parcels['mkt_val_nz'], parcels['cost_val_nz']], parcels['salep_nz'])
-
-## Define filters, based on tabulation 
-parcels_filter = {'year': range(START_YEAR, END_YEAR+1),
-#    'par_type': "PARCEL",
-#    'accttype': "Residential", 
-#    'proptype': "Residential",
-}
-
+    
 
 ############################
 ###### Transform Data ######
 ############################
-# Apply filter 
+parcels = parcels_raw.copy()
+
+# Coerce year column to int type
+parcels['year'] = parcels['year'].astype(int)
+
+# Create column for 'residential' vs 'commercial'
+parcels['is_resid'] = np.any(tuple([parcels[typeid]=='Residential' for typeid in typeids]), axis=0)
+parcels['is_comme'] = np.any(tuple([parcels[typeid]=='Commercial' for typeid in typeids]), axis=0)
+
+# Apply year filter 
 parcels = parcels[parcels['year'].isin(list(parcels_filter['year']))]
+
+# Create 'residential', 'commercial' dataframes
+parcels_resid = parcels[parcels['is_resid']] # Keep if is_residential 
+parcels_resid = parcels_resid[parcels_resid['par_type']=='PARCEL']
+parcels_comme = parcels[parcels['is_comme']]
+
+if remove_zeroes:
+    parcels_resid = parcels_resid[parcels_resid['mkt_val'] != 0]
+    parcels_comme = parcels_comme[parcels_comme['mkt_val'] != 0]
 #parcels = parcels[parcels['mkt_val'] != 0]
 #parcels = parcels[parcels['par_type'] == parcels_filter['par_type']]
 #parcels = parcels[parcels['accttype'] == parcels_filter['accttype']]
 #parcels = parcels[parcels['proptype'] == parcels_filter['proptype']]
 
-# Inspect zero-valued parcels 
-zeroed_parcels = parcels[(parcels['mkt_val'] == 0) & (parcels['cost_val'] == 0)]
-zeroed_parcels_tab = pd.crosstab([zeroed_parcels['par_type'], zeroed_parcels['accttype']], zeroed_parcels['proptype'], dropna=False)
-
 # Keep columns of interest #
-parcels = parcels[parcels_columns]
+parcels_resid = parcels_resid[parcels_columns]
+parcels_comme = parcels_comme[parcels_columns]
 
+# Create combo dataframe #
+dfs = {'resid': parcels_resid, 'comme':parcels_comme}
+parcels_combo = pd.concat(dfs, ignore_index=True)
+dfs['combo'] = parcels_combo
 # Get baseline (City-wide) yearly changes
 #city_trend = parcels.groupby(['year']).agg({'fid':['count'], 
 #    'salep':['sum', 'mean'], 
 #    'mkt_val':['sum', 'mean'], 
 #    'cost_val':['sum', 'mean']}).reset_index(level=['year'])
 
+### Exploratory Stats ###
+dfs_stats = {}
+for dftype in dftypes:
+    dfs_stats[dftype] = {}
+    temp = dfs[dftype].copy()
+    temp = temp[['tract', 'year', 'salep', 'mkt_val', 'cost_val']].set_index(['tract', 'year']) # Restructure
+    pairplot = sns.pairplot(temp) # Create pairplot distributions 
+    pairplot.fig.suptitle(dftype, y=1.08) # Set title
+    dfs_stats[dftype]['pairplot'] = pairplot # Assign to stats dictionary
+    for metric in metrics:
+        dfs_stats[dftype][metric] = sns.distplot(temp[metric]) # Create univariate distributions 
+# kresid = dfs['resid'].copy()
+metric_filters = {}
+metric_filters['resid'] = {}
+metric_filters['resid']['salep'] = {}
+metric_filters['resid']['salep']['min'] = 0
+metric_filters['resid']['salep']['max'] = 5e6
+metric_filters['resid']['mkt_val'] = {}
+metric_filters['resid']['mkt_val']['min'] = 0
+metric_filters['resid']['mkt_val']['max'] = 3e6
+metric_filters['resid']['cost_val'] = {}
+metric_filters['resid']['cost_val']['min'] = 0
+metric_filters['resid']['cost_val']['max'] = 5e6
+# kcomme = dfs['comme'].copy()
+metric_filters['comme'] = {}
+metric_filters['comme']['salep'] = {}
+metric_filters['comme']['salep']['min'] = 0
+metric_filters['comme']['salep']['max'] = 1e8
+metric_filters['comme']['mkt_val'] = {}
+metric_filters['comme']['mkt_val']['min'] = 0
+metric_filters['comme']['mkt_val']['max'] = 5e7
+metric_filters['comme']['cost_val'] = {}
+metric_filters['comme']['cost_val']['min'] = 0
+metric_filters['comme']['cost_val']['max'] = 1e8
+
+# Apply filters #
+dfs_filtered = {}
+for dftype in ['resid', 'comme']:
+    temp = dfs[dftype].copy()
+    for metric in ['salep', 'mkt_val']:
+        temp_min = temp[metric] > metric_filters[dftype][metric]['min'] # flag if obs is above min
+        temp_max = temp[metric] < metric_filters[dftype][metric]['max'] # flag if obs is below max
+        temp = temp[temp_min & temp_max]
+    dfs_filtered[dftype] = temp.copy()
+dfs_filtered['combo'] = pd.concat(dfs_filtered, ignore_index=True)
+    
+### Exploratory Stats ###
+dfs_stats_filtered = {}
+for dftype in dftypes:
+    dfs_stats_filtered[dftype] = {}
+    temp = dfs_filtered[dftype].copy()
+    temp = temp[['tract', 'year', 'salep', 'mkt_val', 'cost_val']].set_index(['tract', 'year']) # Restructure
+    pairplot = sns.pairplot(temp) # Create pairplot distributions 
+    pairplot.fig.suptitle(dftype, y=1.08) # Set title
+    dfs_stats_filtered[dftype]['pairplot'] = pairplot # Assign to stats dictionary
+    for metric in metrics:
+        dfs_stats_filtered[dftype][metric] = sns.distplot(temp[metric]) # Create univariate distributions 
+# kresidf = dfs_filtered['resid']
+# kcommef = dfs_filtered['comme']
+
+### Commit filter ###
+dfs = dfs_filtered
+
+### TODO: Case-study the removed properties ###
+
 
 ######################################
 ### Create City-Level Aggregations ###
 ######################################
-parcels['year'] = parcels['year'].astype(int)
+trends = {}
+trends['city'] = {}
+city_trend_list = {}
+
 # Aggregate #
 city_trend = parcels.groupby(['year']).agg({'salep':['mean', 'median'], 
     'mkt_val':['mean', 'median'], 
@@ -105,15 +227,64 @@ city_trend_median = city_trend_median.drop(columns=range(START_YEAR, END_YEAR+1)
 #######################################
 ### Create Tract-level Aggregations ###
 #######################################
-# Convert year to string #
-parcels['year'] = parcels['year'].astype(str)
+trends = {}
+fulltables = {}
 
-tract_trends = parcels.groupby(['year', 'tract']).agg({'salep':['mean', 'median'], 
-    'mkt_val':['mean', 'median'], 
-    'cost_val':['mean', 'median']}).reset_index(level=['year'])
+def pop_std(x):
+    return x.std(ddof=0)
+def pop_mean(x):
+    return x.mean(ddof=0)
 
+# Aggregate #
+for dftype in dftypes:
+    temp = dfs[dftype].copy()
+    temp['year'] = temp['year'].astype(str) # Coerce year to string
+    # City-level aggregation 
+    city = temp.groupby(['year']).agg({metric: aggs+[pop_std] for metric in metrics})
+    city = city.reset_index()
+    city.columns = ['year', 
+                    'salep_mean_city', 'salep_std_city', 
+                    'mkt_val_mean_city', 'mkt_val_std_city', 
+                    'cost_val_mean_city', 'cost_val_std_city']
+    tract = temp.groupby(['year', 'tract']).agg({'salep':aggs, 
+                         'mkt_val':aggs, 
+                         'cost_val':aggs}).reset_index(level=['year']).reset_index() 
+    tract.columns = ['tract', 'year',
+                    'salep_mean_tract',
+                    'mkt_val_mean_tract',
+                    'cost_val_mean_tract',]
+    citytract = pd.merge(tract, city, how='left', on=['year'], suffixes=('_tract', '_city')) # Merge together state and local data
+    
+    # Calculate normalized tract performance
+    for metric in metrics:
+        citytract[metric] = (citytract[metric+'_mean_tract']-citytract[metric+'_mean_city'])/citytract[metric+'_std_city']
+    fulltables[dftype] = citytract.copy()
+    output = citytract[['tract', 'year']+metrics] 
+    preshape = output.copy()
+    output = output.pivot(index='tract', columns='year')
+    output = output.reset_index()
+    colnames = ['tract'] + ['salep_{}'.format(year) for year in range(2012,2019)] + ['mkt_val_{}'.format(year) for year in range(2012,2019)] + ['cost_val_{}'.format(year) for year in range(2012,2019)]
+    output.columns = colnames
+    output = output.dropna()
+    # Reshape wider on year
+    output.to_csv(project_directory+'1_analytical_files/base_file.csv')
+    
+
+    # Aggregate
+#    output = temp.groupby(['year', 'tract']).agg({'mkt_val':aggs, 
+#                         'mkt_val':aggs, 
+#                         'cost_val':aggs}).reset_index(level=['year']) 
+    # Rename Columns
+#    output.columns = ['_'.join(tup).rstrip('_') for tup in output.columns.values]
+#    output = output.reset_index()
+#    output = output.pivot(index='tract', columns='year')
+#    output[']
+    trends['tract'][dftype] = output.copy()
+#ktrendtractresid = trends['tract']['resid']
+# ktrendcity = trends['city']
 # Rename columns #
-tract_trends.columns = ['_'.join(tup).rstrip('_') for tup in tract_trends.columns.values]
+    
+#tract_trends.columns = ['_'.join(tup).rstrip('_') for tup in tract_trends.columns.values]
 
 # Add year to index #
 tract_trends = tract_trends.set_index(['year'], append=True)
@@ -135,8 +306,10 @@ tract_trends_median = tract_trends_median.pivot(index='year', columns='tract').T
 # Rename columns again #
 #tract_trends_mean.columns = ['_'.join(tup).rstrip('_') for tup in tract_trends_mean.columns.values]
 #tract_trends_median.columns = ['_'.join(tup).rstrip('_') for tup in tract_trends_median.columns.values]
+### Inspect aggregations ###
+#ktractresid = trends['tract']['resid']
 
-### Inspect Missingness ###
+# Missingness #
 tract_mean_nulls = tract_trends_mean.isnull()
 tract_median_nulls = tract_trends_median.isnull()
 tract_median_nulls = tract_median_nulls .groupby(level=[0,1]).sum().astype(int)
@@ -241,6 +414,10 @@ students = students.set_index(['tract'])
 ###########################
 ###### Combine Data #######
 ###########################
+output2 = students.merge(output, on='tract')
+output2.to_csv(project_directory+'1_analytical_files/base_file.csv')
+
+
 ### Inspect Nulls ###
 inspect_null_mean = students.merge(tract_mean_nulls, on='tract')
 
