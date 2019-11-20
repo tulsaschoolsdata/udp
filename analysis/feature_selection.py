@@ -20,10 +20,10 @@ from sklearn.datasets import load_diabetes
 
 #REPOS = os.environ['REPOS']
 #
-#data = load_diabetes()
-##df = pd.DataFrame(data.data, columns=data.feature_names)
-#df = pd.DataFrame(data = np.c_[data['data'], data['target']], 
-#        columns = data['feature_names'] + ['target'])
+data = load_diabetes()
+#df = pd.DataFrame(data.data, columns=data.feature_names)
+df = pd.DataFrame(data = np.c_[data['data'], data['target']], 
+        columns = data['feature_names'] + ['target'])
 
 def constructTopFeatureColumns(features):
     topFeatures = []
@@ -121,30 +121,31 @@ def getTopFeaturesRFE(df,predictor):
     #return dict(map(float, rfe.ranking_))
 
 ## Grab list of column headers
-#names = list(df.drop(['target'], axis=1)._get_numeric_data().columns)
-#
-#results = {}
-#
-##results['RandomLasso'] = getTopFeaturesRandomLasso(df,'target')
-#results['Lasso'] = getTopFeaturesLasso(df,'target')
-#results['Ridge'] = getTopFeaturesRidge(df,'target')
-#results['Linear'] = getTopFeaturesLinear(df,'target')
-#results['RandomForest'] = getTopFeaturesRandomForest(df,'target')
-#results['Correlation'] = getTopFeaturesF(df,'target')
-#results['RFE'] = dict(zip(names,getTopFeaturesRFE(df,'target')))
-#
-#methods = list(results.keys())
-#r = {}
-##for name in names:
-##    r[name] = round(np.mean([results[method][name] for method in results.keys()]), 2)
-##for name in names:
-##    for method in methods:
-##        r[name] = results[method][name]
-##    r[name] = round(np.mean([results[method][name] for method in results.keys()]), 2)
-#r = {name: round(np.mean([results[method][name] for method in results.keys()]), 2) for name in names}
-# 
-#methods = sorted(results.keys())
-#results["Mean"] = r
+names = list(df.drop(['target'], axis=1)._get_numeric_data().columns)
+
+results = {}
+
+#results['RandomLasso'] = getTopFeaturesRandomLasso(df,'target')
+results['Lasso'] = getTopFeaturesLasso(df,'target')
+results['Ridge'] = getTopFeaturesRidge(df,'target')
+results['Linear'] = getTopFeaturesLinear(df,'target')
+results['RandomForest'] = getTopFeaturesRandomForest(df,'target')
+results['Correlation'] = getTopFeaturesF(df,'target')
+results['RFE'] = dict(zip(names,getTopFeaturesRFE(df,'target')))
+
+results_df = pd.DataFrame(results)
+methods = list(results.keys())
+r = {}
+#for name in names:
+#    r[name] = round(np.mean([results[method][name] for method in results.keys()]), 2)
+#for name in names:
+#    for method in methods:
+#        r[name] = results[method][name]
+#    r[name] = round(np.mean([results[method][name] for method in results.keys()]), 2)
+r = {name: round(np.mean([results[method][name] for method in results.keys()]), 2) for name in names}
+ 
+methods = sorted(results.keys())
+results["Mean"] = r
 #       
 #Output = pd.DataFrame.from_dict(results).sort_values(['Mean'],ascending=[0])
 #Output.to_csv(REPOS+'/UDP/output/Ranking.csv', sep=',')
