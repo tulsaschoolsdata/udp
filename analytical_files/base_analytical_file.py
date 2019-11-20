@@ -232,9 +232,13 @@ for dftype in dftypes:
     colnames = ['tract'] + colnames_
     output.columns = colnames
     # Impute values for NA's
+    for metric in metrics:
+        for year in range(START_YEAR+1, END_YEAR):
+            output[metric+'_{}'.format(year)] = output[metric+'_{}'.format(year)].fillna((output[metric+'_{}'.format(year-1)] + output[metric+'_{}'.format(year+1)])/2)
     output = output.dropna()
     tract_wide[dftype] = output
 
+#kwideresid = tract_wide['resid']
 
 ###########################
 ###### Combine Data #######
@@ -254,5 +258,5 @@ now = dt.now()
 timestamp = "{}-{}-{}_{}-{}".format(now.year, now.month, now.day, now.hour, now.minute)
 os.mkdir(project_directory+'1_analytical_files/'+timestamp)
 for dftype in dftypes:
-    df_out_wide[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_wide_{}.csv'.format(dftype))
-    df_out_long[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(dftype))
+    df_out_wide[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_wide_{}.csv'.format(timestamp, dftype))
+    df_out_long[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))
