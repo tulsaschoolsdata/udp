@@ -27,6 +27,11 @@
 ## 2. Run Analysis on analytical files
 <dl>
   <dt>analysis/feature_selection.py</dt>
+  <dd>Define feature selection methods</dd> 
   <dt>analysis/udp_feature_selection.py</dt>
+  <dd>Iterate over each group type (residential, commercial, combo) and year (2013-2018) combination:</dd>
+  <dd>Apply each feature selection method to the target year, using parcel data from prior years</dd>
+  <dd>Combine year-to-year results for each group type</dd>
+  <dd>Export 'analysis_&lsaquo;residential/commercial/combo&rsaquo;.csv' (analytical result) files</dd>
 </dl>
   
