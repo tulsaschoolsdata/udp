@@ -24,7 +24,7 @@
   <dd>Export 'base_file_&lsaquo;wide/long&rsaquo;_&lsaquo;residential/commercial/combo&rsaquo;.csv' (analytical) files</dd>
 </dl>
 
-## 2. Run Analysis on analytical files
+## 2. 'analysis': Run Analysis on analytical files
 <dl>
   <dt>feature_selection_methods.py</dt>
   <dd>Define feature selection methods</dd> 
