@@ -11,19 +11,8 @@ import seaborn as sns
 from pandas.plotting import scatter_matrix
 from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
 from sklearn.preprocessing import MinMaxScaler
-#from sklearn.linear_model import (LinearRegression, Ridge, 
-#                                  Lasso, RandomizedLasso)
 from sklearn.linear_model import (LinearRegression, Ridge, Lasso)
 from sklearn.feature_selection import RFE, f_regression
-
-from sklearn.datasets import load_diabetes
-
-#REPOS = os.environ['REPOS']
-#
-data = load_diabetes()
-#df = pd.DataFrame(data.data, columns=data.feature_names)
-df = pd.DataFrame(data = np.c_[data['data'], data['target']], 
-        columns = data['feature_names'] + ['target'])
 
 def constructTopFeatureColumns(features):
     topFeatures = []
@@ -35,14 +24,9 @@ def constructTopFeatureColumns(features):
 def getTopFeaturesRF(df,predictor):
     scaler_x = MinMaxScaler(feature_range=(0, 1))
     scaler_y = MinMaxScaler(feature_range=(0, 1))
-    #df['Gain'] = df['open']-df['close']
     y = df[predictor]
-    #y = fixTime(y,scaler_y)
     X = df.drop([predictor],axis=1)
     columns = X.columns
-    #X = scaler_x.fit_transform(X)
-    #y = scaler_y.fit_transform(y)
-    # feature extraction
     model = RandomForestRegressor(n_estimators=300)
     model.fit(X, y)
     result = sorted(zip(map(lambda x: round(x, 4), model.feature_importances_), columns), reverse=True)
@@ -50,7 +34,6 @@ def getTopFeaturesRF(df,predictor):
 
 def getTopFeaturesRandomForest(df,predictor):
     y = df[predictor]
-    #y = fixTime(y,scaler_y)
     X = df.drop([predictor],axis=1)._get_numeric_data()
     columns = X.columns
     rfe = RandomForestRegressor(n_estimators=300)
@@ -59,7 +42,6 @@ def getTopFeaturesRandomForest(df,predictor):
 
 def getTopFeaturesRidge(df,predictor):
     y = df[predictor]
-    #y = fixTime(y,scaler_y)
     X = df.drop([predictor],axis=1)._get_numeric_data()
     columns = X.columns
     ridge = Ridge(alpha=7)
@@ -68,25 +50,14 @@ def getTopFeaturesRidge(df,predictor):
 
 def getTopFeaturesLasso(df,predictor):
     y = df[predictor]
-    #y = fixTime(y,scaler_y)
     X = df.drop([predictor],axis=1)._get_numeric_data()
     columns = X.columns
     lasso = Lasso(alpha=.05)
     lasso.fit(X, y)
     return rank_to_dict(np.abs(lasso.coef_), columns)
 
-#def getTopFeaturesRandomLasso(df,predictor):
-#    y = df[predictor]
-#    #y = fixTime(y,scaler_y)
-#    X = df.drop([predictor],axis=1)._get_numeric_data()
-#    columns = X.columns
-#    rlasso = RandomizedLasso(alpha=0.04)
-#    rlasso.fit(X, y)
-#    return rank_to_dict(np.abs(rlasso.scores_), columns)
-
 def getTopFeaturesLinear(df,predictor):
     y = df[predictor]
-    #y = fixTime(y,scaler_y)
     X = df.drop([predictor],axis=1)._get_numeric_data()
     columns = X.columns
     lr = LinearRegression(normalize=True)
@@ -101,7 +72,6 @@ def rank_to_dict(ranks, names, order=1):
 
 def getTopFeaturesF(df,predictor):
     y = df[predictor]
-    #y = fixTime(y,scaler_y)
     X = df.drop([predictor],axis=1)._get_numeric_data()
     columns = X.columns
     f, pval  = f_regression(X, y, center=True)
@@ -110,42 +80,10 @@ def getTopFeaturesF(df,predictor):
 
 def getTopFeaturesRFE(df,predictor):
     y = df[predictor]
-    #y = fixTime(y,scaler_y)
     X = df.drop([predictor],axis=1)._get_numeric_data()
     columns = X.columns
     lr = LinearRegression()
     rfe = RFE(lr, n_features_to_select=5)
     rfe.fit(X,y)
     return list(map(float, rfe.ranking_))
-    #return map(float, rfe.ranking_)
-    #return dict(map(float, rfe.ranking_))
 
-## Grab list of column headers
-names = list(df.drop(['target'], axis=1)._get_numeric_data().columns)
-
-results = {}
-
-#results['RandomLasso'] = getTopFeaturesRandomLasso(df,'target')
-results['Lasso'] = getTopFeaturesLasso(df,'target')
-results['Ridge'] = getTopFeaturesRidge(df,'target')
-results['Linear'] = getTopFeaturesLinear(df,'target')
-results['RandomForest'] = getTopFeaturesRandomForest(df,'target')
-results['Correlation'] = getTopFeaturesF(df,'target')
-results['RFE'] = dict(zip(names,getTopFeaturesRFE(df,'target')))
-
-results_df = pd.DataFrame(results)
-methods = list(results.keys())
-r = {}
-#for name in names:
-#    r[name] = round(np.mean([results[method][name] for method in results.keys()]), 2)
-#for name in names:
-#    for method in methods:
-#        r[name] = results[method][name]
-#    r[name] = round(np.mean([results[method][name] for method in results.keys()]), 2)
-r = {name: round(np.mean([results[method][name] for method in results.keys()]), 2) for name in names}
- 
-methods = sorted(results.keys())
-results["Mean"] = r
-#       
-#Output = pd.DataFrame.from_dict(results).sort_values(['Mean'],ascending=[0])
-#Output.to_csv(REPOS+'/UDP/output/Ranking.csv', sep=',')

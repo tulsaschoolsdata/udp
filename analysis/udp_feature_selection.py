@@ -4,7 +4,7 @@ author: zachandfox
 date created: 2019-11-12
 """
 
-import analysis.feature_selection as fs
+import analysis.feature_selection_methods as fs
 #from CONSTANTS import CURRENT_YEAR
 from __tpsdata__ import project_directory
 import os
