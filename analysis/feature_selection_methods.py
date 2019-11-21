@@ -76,7 +76,8 @@ def getTopFeaturesF(df,predictor):
     columns = X.columns
     f, pval  = f_regression(X, y, center=True)
     f[np.isnan(f)] = 0
-    return rank_to_dict(f, columns)
+#    return rank_to_dict(f, columns)
+    return (f, pval)
 
 def getTopFeaturesRFE(df,predictor):
     y = df[predictor]

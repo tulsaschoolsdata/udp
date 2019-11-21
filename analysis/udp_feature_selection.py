@@ -6,7 +6,7 @@ date created: 2019-11-12
 
 import analysis.feature_selection_methods as fs
 #from CONSTANTS import CURRENT_YEAR
-from __tpsdata__ import project_directory
+from __tpsdata__ import REPO_PATH, project_directory
 import os
 import pandas as pd
 #import numpy as np
@@ -62,13 +62,14 @@ for dftype in dftypes:
         temp = pd.merge(temp, results_by_year[dftype][target_year], on='metric', how='outer')
     results_out[dftype] = temp.copy()
 
-koutresid = results_out['resid']
+koutresid = results_out['resid'].set_index('metric')
+koutresid = koutresid.reindex(sorted(koutresid.columns), axis=1)
 koutcomme = results_out['comme']
 koutcombo = results_out['combo']
 
 ###### Export Results ######
-#outpath = project_directory+'2_output_deliverables/Analysis/'+latest_dir
-#os.mkdir(outpath)
+outpath = project_directory+'2_output_deliverables/Analysis/'+latest_dir
+os.mkdir(outpath)
 for dftype in dftypes:
     results_out[dftype].to_csv(outpath+'/analysis_{}.csv'.format(dftype))
 

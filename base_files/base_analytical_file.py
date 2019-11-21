@@ -255,12 +255,18 @@ df_out_long = {}
 
 for dftype in dftypes:
     df_out_wide[dftype] = pd.merge(students, tract_wide[dftype], on='tract')
+    long = pd.merge(students_long, tract_long[dftype], on=['tract', 'year'])
+    long = long.sort_values(by=['tract', 'year'])
+    long = long.groupby(['tract'])['count'].diff().fillna(0)
+    long = long.groupby(['tract'])['salep_median_tract'].diff().fillna(0)
+    
     df_out_long[dftype] = pd.merge(students_long, tract_long[dftype], on=['tract', 'year'])
 
 kwideresid = df_out_wide['resid']
-klongresid = df_out_long['resid']
+
 
 # Create differential change variable on long
+klongresid = df_out_long['resid']
 klongresid = klongresid.sort_values(by=['tract', 'year'])
 klongresid['diff_count'] = klongresid.groupby(['tract'])['count'].diff().fillna(0)
 klongresid['diff_salep'] = klongresid.groupby(['tract'])['salep_median_tract'].diff().fillna(0)
@@ -269,7 +275,19 @@ klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'
 klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] < 0)] = 1
 klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] > 0)]= -1
 klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] < 0)]= -2
+klongresid = klongresid.groupby(['tract']).agg({'relation':sum})
 
+#klongresid = df_out_long['resid']
+#klongresid = klongresid[(klongresid['year']==2013) | (klongresid['year']==2018)]
+#klongresid = klongresid.sort_values(by=['tract', 'year'])
+#klongresid['diff_count'] = klongresid.groupby(['tract'])['count'].diff().fillna(0)
+#klongresid['diff_salep'] = klongresid.groupby(['tract'])['salep_median_tract'].diff().fillna(0)
+#klongresid['relation'] = 0
+#klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] > 0)] = 2
+#klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] < 0)] = 1
+#klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] > 0)]= -1
+#klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] < 0)]= -2
+#klongresid = klongresid[(klongresid['year']==2018)]
 
 #########################
 ###### Export Data ######
@@ -280,4 +298,5 @@ os.mkdir(project_directory+'1_analytical_files/'+timestamp)
 for dftype in dftypes:
     df_out_wide[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_wide_{}.csv'.format(timestamp, dftype))
     df_out_long[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))
-klongresid.to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))
+#klongresid.to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))
+klongresid.to_csv(project_directory+'1_analytical_files/{}/instances_of_gentrification.csv'.format(timestamp, dftype))
