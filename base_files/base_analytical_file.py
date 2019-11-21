@@ -275,6 +275,15 @@ long_cols = {'year':'year',
              'cost_val_median_tract':'cost_val',             
              'cost_val':'cost_val_norm'}
 klongresid = klongresid[list(long_cols.keys())].rename(columns=long_cols)
+
+# Impute rows for all tract-year combos
+years_list = list(range(START_YEAR, END_YEAR+1))
+tracts_list = list(klongresid['tract'].unique())
+tracts = pd.DataFrame({'key':[1 for tract in tracts_list], 'tract':tracts_list})
+years = pd.DataFrame({'key':[1 for year in years_list], 'year':years_list})
+year_tract_cross = pd.merge(tracts, years, on='key')[['tract', 'year']]
+klongresid = pd.merge(year_tract_cross, klongresid,  on=['tract', 'year'], how='outer')
+
 #klongresid = klongresid[(klongresid['year']==2013) | (klongresid['year']==2018)]
 klongresid = klongresid.sort_values(by=['tract', 'year'])
 # Indicate percent changes
@@ -287,7 +296,9 @@ for shift in range(END_YEAR-START_YEAR):
     klongresid['diff_count_{}'.format(shift)] = np.nanmean(
             [klongresid.groupby(['tract'])['count'].pct_change().shift(i) for i in range(shift+1)], 
             axis = 0)
-    for metric in metrics:
+    
+for metric in metrics:
+    for shift in range(END_YEAR-START_YEAR):
         klongresid['diff_count_{}'.format(shift)] = np.nanmean(
                 [klongresid.groupby(['tract'])['count'].pct_change().shift(i) for i in range(shift+1)], 
                 axis = 0)
@@ -298,13 +309,15 @@ for shift in range(END_YEAR-START_YEAR):
                 [klongresid.groupby(['tract'])['{}_norm'.format(metric)].diff().shift(i) for i in range(shift+1)],
                 axis=0)
 
+klongresid = klongresid.dropna()
+
 #klongresid['diff_count'] = klongresid.groupby(['tract'])['count'].diff().fillna(0)
-klongresid['diff_salep'] = klongresid.groupby(['tract'])['salep_median_tract'].diff().fillna(0)
-klongresid['relation'] = 0
-klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] > 0)] = 2
-klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] < 0)] = 1
-klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] > 0)]= -1
-klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] < 0)]= -2
+#klongresid['diff_salep'] = klongresid.groupby(['tract'])['salep_median_tract'].diff().fillna(0)
+#klongresid['relation'] = 0
+#klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] > 0)] = 2
+#klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] < 0)] = 1
+#klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] > 0)]= -1
+#klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] < 0)]= -2
 
 #klongresid = klongresid[(klongresid['year']==2018)]
 #klongresid = klongresid.groupby(['tract']).agg({'relation':sum})
