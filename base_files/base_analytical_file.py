@@ -41,7 +41,7 @@ medians = False
 if medians:
     aggs = ['mean', 'median']
 else:
-    aggs = ['mean']
+    aggs = ['median']
 
 
 ## Define filters, based on tabulation 
@@ -87,6 +87,8 @@ students.rename(columns = dict(new_names), inplace=True)
 # Add tract to index 
 students = students.set_index(['tract'])
 
+students_long = pd.read_csv(project_directory+'1_analytical_files/tps_covariates/tps_student_counts_by_tract_long.csv', usecols=['year', 'tract', 'count'])
+
     
 ### Parcels ###################################################################
 parcels = parcels_raw.copy()
@@ -131,6 +133,8 @@ for dftype in dftypes:
     dfs_stats[dftype]['pairplot'] = pairplot # Assign to stats dictionary
     for metric in metrics:
         dfs_stats[dftype][metric] = sns.distplot(temp[metric]) # Create univariate distributions 
+        fig = dfs_stats[dftype][metric].get_figure()
+        fig.savefig(project_directory+'2_output_deliverables/Images/Prefilter_distplot/prefilter_{}.png'.format(metric))
 # kresid = dfs['resid'].copy()
 # TODO: use programmatic filtering on Sdev's from mean
 metric_filters = {}
@@ -178,6 +182,8 @@ for dftype in dftypes:
     dfs_stats_filtered[dftype]['pairplot'] = pairplot # Assign to stats dictionary
     for metric in metrics:
         dfs_stats_filtered[dftype][metric] = sns.distplot(temp[metric]) # Create univariate distributions 
+        fig = dfs_stats_filtered[dftype][metric].get_figure()
+        fig.savefig(project_directory+'2_output_deliverables/Images/Postfilter_distplot/postfilter_{}'.format(metric))
 # kresidf = dfs_filtered['resid']
 # kcommef = dfs_filtered['comme']
 
@@ -203,24 +209,25 @@ for dftype in dftypes:
     city = temp.groupby(['year']).agg({metric: aggs+[pop_std] for metric in metrics})
     city = city.reset_index()
     city.columns = ['year', 
-                    'salep_mean_city', 'salep_std_city', 
-                    'mkt_val_mean_city', 'mkt_val_std_city', 
-                    'cost_val_mean_city', 'cost_val_std_city']
+                    'salep_median_city', 'salep_std_city', 
+                    'mkt_val_median_city', 'mkt_val_std_city', 
+                    'cost_val_median_city', 'cost_val_std_city']
     # Tract-Level aggregation #
     tract = temp.groupby(['year', 'tract']).agg({'salep':aggs, 
                          'mkt_val':aggs, 
                          'cost_val':aggs}).reset_index(level=['year']).reset_index() 
     tract.columns = ['tract', 'year',
-                    'salep_mean_tract',
-                    'mkt_val_mean_tract',
-                    'cost_val_mean_tract',]
+                    'salep_median_tract',
+                    'mkt_val_median_tract',
+                    'cost_val_median_tract',]
     # Combine City and Tract
     citytract = pd.merge(tract, city, how='left', on=['year'], suffixes=('_tract', '_city')) # Merge together state and local data
     # Calculate normalized tract performance
     for metric in metrics:
-        citytract[metric] = (citytract[metric+'_mean_tract']-citytract[metric+'_mean_city'])/citytract[metric+'_std_city']
+        citytract[metric] = (citytract[metric+'_median_tract']-citytract[metric+'_median_city'])/citytract[metric+'_std_city']
     # Save, export #
     tract_long[dftype] = citytract.copy()
+    tract_long[dftype]['year'] = tract_long[dftype]['year'].astype(int)
     # Create wide file for analytical purposes #
     output = citytract[['tract', 'year']+metrics] 
     preshape = output.copy()
@@ -248,7 +255,20 @@ df_out_long = {}
 
 for dftype in dftypes:
     df_out_wide[dftype] = pd.merge(students, tract_wide[dftype], on='tract')
-    df_out_long[dftype] = pd.merge(students, tract_long[dftype], on='tract')
+    df_out_long[dftype] = pd.merge(students_long, tract_long[dftype], on=['tract', 'year'])
+
+kwideresid = df_out_wide['resid']
+klongresid = df_out_long['resid']
+
+# Create differential change variable on long
+klongresid = klongresid.sort_values(by=['tract', 'year'])
+klongresid['diff_count'] = klongresid.groupby(['tract'])['count'].diff().fillna(0)
+klongresid['diff_salep'] = klongresid.groupby(['tract'])['salep_median_tract'].diff().fillna(0)
+klongresid['relation'] = 0
+klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] > 0)] = 2
+klongresid['relation'][(klongresid['diff_count'] > 0) & (klongresid['diff_salep'] < 0)] = 1
+klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] > 0)]= -1
+klongresid['relation'][(klongresid['diff_count'] < 0) & (klongresid['diff_salep'] < 0)]= -2
 
 
 #########################
@@ -260,3 +280,4 @@ os.mkdir(project_directory+'1_analytical_files/'+timestamp)
 for dftype in dftypes:
     df_out_wide[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_wide_{}.csv'.format(timestamp, dftype))
     df_out_long[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))
+klongresid.to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))

@@ -42,13 +42,13 @@ for dftype in dftypes:
         ###### Run Analysis ######
         results = {}
         #results['Lasso'] = fs.getTopFeaturesLasso(df_input, target)
-        results['Ridge'] = fs.getTopFeaturesRidge(df_input,target)
-        results['Linear'] = fs.getTopFeaturesLinear(df_input, target)
-        results['RandomForest'] = fs.getTopFeaturesRandomForest(df_input,target)
-        results['Correlation'] = fs.getTopFeaturesF(df_input, target)
+        results['rdg'] = fs.getTopFeaturesRidge(df_input,target)
+        results['lin'] = fs.getTopFeaturesLinear(df_input, target)
+        results['rf'] = fs.getTopFeaturesRandomForest(df_input,target)
+        results['cor'] = fs.getTopFeaturesF(df_input, target)
         #results['RFE'] = dict(zip(inputs, fs.getTopFeaturesRFE(df_input, target)))
         dfout = pd.DataFrame(results)
-        dfout.rename(columns = {name: name+'_{}'.format(target_year) for name in dfout.columns}, inplace=True)
+        dfout.rename(columns = {name: name+'{}'.format(target_year) for name in dfout.columns}, inplace=True)
         dfout = dfout.reset_index()
         dfout.rename(columns = {'index':'metric'}, inplace=True)
         results_by_year[dftype][target_year] = dfout
@@ -62,13 +62,15 @@ for dftype in dftypes:
         temp = pd.merge(temp, results_by_year[dftype][target_year], on='metric', how='outer')
     results_out[dftype] = temp.copy()
 
+koutresid = results_out['resid']
+koutcomme = results_out['comme']
+koutcombo = results_out['combo']
 
 ###### Export Results ######
-outpath = project_directory+'2_output_deliverables/Analysis/'+latest_dir
-os.mkdir(outpath)
+#outpath = project_directory+'2_output_deliverables/Analysis/'+latest_dir
+#os.mkdir(outpath)
 for dftype in dftypes:
     results_out[dftype].to_csv(outpath+'/analysis_{}.csv'.format(dftype))
-#koutresid = results_out['resid']
 
 #methods = list(results.keys())
 #r = {}
