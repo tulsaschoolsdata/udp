@@ -323,13 +323,6 @@ klongresid = klongresid.dropna()
 #klongresid = klongresid.groupby(['tract']).agg({'relation':sum})
 
 
-
-
-
-
-
-
-
 #########################
 ###### Export Data ######
 #########################
@@ -339,5 +332,5 @@ os.mkdir(project_directory+'1_analytical_files/'+timestamp)
 for dftype in dftypes:
     df_out_wide[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_wide_{}.csv'.format(timestamp, dftype))
     df_out_long[dftype].to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))
-#klongresid.to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype))
-klongresid.to_csv(project_directory+'1_analytical_files/{}/instances_of_gentrification.csv'.format(timestamp, dftype))
+klongresid.to_csv(project_directory+'1_analytical_files/{}/base_file_long_{}.csv'.format(timestamp, dftype), index=False)
+#klongresid.to_csv(project_directory+'1_analytical_files/{}/instances_of_gentrification.csv'.format(timestamp, dftype))
