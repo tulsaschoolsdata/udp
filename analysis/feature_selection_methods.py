@@ -38,7 +38,8 @@ def getTopFeaturesRandomForest(df,predictor):
     columns = X.columns
     rfe = RandomForestRegressor(n_estimators=300)
     rfe.fit(X,y)
-    return rank_to_dict(rfe.feature_importances_, columns)
+#    return rank_to_dict(rfe.feature_importances_, columns)
+    return dict(zip(columns, rfe.feature_importances_))
 
 def getTopFeaturesRidge(df,predictor):
     y = df[predictor]
@@ -62,7 +63,9 @@ def getTopFeaturesLinear(df,predictor):
     columns = X.columns
     lr = LinearRegression(normalize=True)
     lr.fit(X, y)
-    return rank_to_dict(np.abs(lr.coef_), columns)
+#    return rank_to_dict(np.abs(lr.coef_), columns)
+    return dict(zip(columns, lr.coef_))
+#    return lr.score(X, y)
 
 def rank_to_dict(ranks, names, order=1):
     minmax = MinMaxScaler()
@@ -77,7 +80,7 @@ def getTopFeaturesF(df,predictor):
     f, pval  = f_regression(X, y, center=True)
     f[np.isnan(f)] = 0
 #    return rank_to_dict(f, columns)
-    return (f, pval)
+    return (dict(zip(columns, f)), dict(zip(columns, pval)))
 
 def getTopFeaturesRFE(df,predictor):
     y = df[predictor]

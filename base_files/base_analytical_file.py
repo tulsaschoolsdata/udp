@@ -299,17 +299,16 @@ for shift in range(END_YEAR-START_YEAR):
     
 for metric in metrics:
     for shift in range(END_YEAR-START_YEAR):
-        klongresid['diff_count_{}'.format(shift)] = np.nanmean(
-                [klongresid.groupby(['tract'])['count'].pct_change().shift(i) for i in range(shift+1)], 
-                axis = 0)
         klongresid['diff_{}_{}'.format(metric, shift)] = np.nanmean(
                 [klongresid.groupby(['tract'])[metric].pct_change().shift(i) for i in range(shift+1)],
                 axis=0)
+    for shift in range(END_YEAR-START_YEAR):
         klongresid['diff_{}_norm_{}'.format(metric, shift)] = np.nanmean(
                 [klongresid.groupby(['tract'])['{}_norm'.format(metric)].diff().shift(i) for i in range(shift+1)],
                 axis=0)
 
 klongresid = klongresid.dropna()
+klongresid = klongresid[~klongresid.isin([np.nan, np.inf, -np.inf]).any(1)]
 
 #klongresid['diff_count'] = klongresid.groupby(['tract'])['count'].diff().fillna(0)
 #klongresid['diff_salep'] = klongresid.groupby(['tract'])['salep_median_tract'].diff().fillna(0)
